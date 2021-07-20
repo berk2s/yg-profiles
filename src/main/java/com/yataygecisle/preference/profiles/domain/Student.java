@@ -27,7 +27,8 @@ public class Student extends BaseEntity {
     @OneToMany(
             mappedBy = "student",
             cascade = CascadeType.ALL,
-            orphanRemoval = true
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
     )
     private List<LikedCourse> likedCourses = new ArrayList<>();
 

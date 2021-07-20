@@ -7,14 +7,15 @@ import com.yataygecisle.preference.profiles.domain.Course;
 import com.yataygecisle.preference.profiles.domain.Student;
 import com.yataygecisle.preference.profiles.repository.CourseRepository;
 import com.yataygecisle.preference.profiles.repository.StudentRepository;
+import com.yataygecisle.preference.profiles.web.models.AddBasketItemDto;
+import com.yataygecisle.preference.profiles.web.models.BasketDto;
+import com.yataygecisle.preference.profiles.web.models.BasketItemDto;
+import com.yataygecisle.preference.profiles.web.models.CreateBasketDto;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -34,10 +35,10 @@ public class IntegrationTest {
     private ObjectMapper objectMapper;
 
     @Autowired
-    StudentRepository studentRepository;
+    private StudentRepository studentRepository;
 
     @Autowired
-    CourseRepository courseRepository;
+    private CourseRepository courseRepository;
 
     public String createAccessToken() throws JsonProcessingException {
         RestTemplate restTemplate = new RestTemplate();
@@ -96,10 +97,11 @@ public class IntegrationTest {
         map.put("student", savedStudent);
         map.put("course", savedCourse);
 
+        System.out.println("STUDENT CREATED!!");
+
         return map;
     }
 
-    @Transactional
     public Course createCourse() {
         Course course = new Course();
         course.setRemoteCourseId(UUID.randomUUID());
@@ -107,6 +109,68 @@ public class IntegrationTest {
         course.setRemoteCollegeId(UUID.randomUUID());
 
         return courseRepository.save(course);
+    }
+
+    @Transactional
+    public void createCourse(BasketDto basketDto) {
+
+    }
+
+
+    public BasketDto triggerToCreatingBasket(String token, String userId) throws JsonProcessingException {
+        RestTemplate restTemplate = new RestTemplate();
+        ObjectMapper mapper = new ObjectMapper();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(token);
+
+        HttpEntity entity = new HttpEntity(headers);
+
+        ResponseEntity<BasketItemDto[]> basketItemResponse = restTemplate
+                .exchange("http://localhost:8081/basketitem",
+                        HttpMethod.GET,
+                        entity,
+                        BasketItemDto[].class);
+
+        BasketItemDto[] basketItemDtos = basketItemResponse.getBody();
+
+        AddBasketItemDto addBasketItemDto = new AddBasketItemDto();
+        addBasketItemDto.setBasketItemId(basketItemDtos[0].getBasketItemId());
+
+        CreateBasketDto createBasketDto = new CreateBasketDto();
+        createBasketDto.setOwnerId(userId);
+        createBasketDto.setBasketName("my basket");
+        createBasketDto.getBasketItems().add(addBasketItemDto);
+
+        HttpEntity<String> request = new HttpEntity<>(objectMapper.writeValueAsString(createBasketDto), headers);
+
+        ResponseEntity<BasketDto> response
+                = restTemplate.postForEntity("http://localhost:8081/basket",
+                request,
+                BasketDto.class);
+
+        return response.getBody();
+    }
+
+    public BasketItemDto[] getBasketInfo(String token) {
+        RestTemplate restTemplate = new RestTemplate();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(token);
+
+        HttpEntity entity = new HttpEntity(headers);
+
+        ResponseEntity<BasketItemDto[]> basketItemResponse = restTemplate
+                .exchange("http://localhost:8081/basketitem",
+                        HttpMethod.GET,
+                        entity,
+                        BasketItemDto[].class);
+
+        BasketItemDto[] basketItemDtos = basketItemResponse.getBody();
+
+        return basketItemDtos;
     }
 
 }

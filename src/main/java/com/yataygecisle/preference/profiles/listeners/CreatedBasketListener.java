@@ -1,45 +1,41 @@
-package com.yataygecisle.preference.profiles.services.impl;
+package com.yataygecisle.preference.profiles.listeners;
 
+import com.yataygecisle.commons.models.CreatedBasketQueue;
+import com.yataygecisle.commons.models.Queues;
 import com.yataygecisle.preference.profiles.domain.Course;
 import com.yataygecisle.preference.profiles.domain.Student;
 import com.yataygecisle.preference.profiles.repository.CourseRepository;
 import com.yataygecisle.preference.profiles.repository.StudentRepository;
 import com.yataygecisle.preference.profiles.services.StudentService;
-import com.yataygecisle.preference.profiles.web.mappers.StudentMapper;
 import com.yataygecisle.preference.profiles.web.model.CreateStudentProfileDto;
-import com.yataygecisle.preference.profiles.web.model.StudentProfileDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.stereotype.Component;
 
 import javax.transaction.Transactional;
 import java.util.UUID;
 
-@Transactional
 @Slf4j
 @RequiredArgsConstructor
-@Service
-public class StudentServiceImpl implements StudentService {
+@Component
+public class CreatedBasketListener {
 
     private final StudentRepository studentRepository;
     private final CourseRepository courseRepository;
-    private final StudentMapper studentProfileMapper;
-
-    @Override
-    public StudentProfileDto getStudentProfile(UUID studentId) {
-        Student student = studentRepository
-                .findByRemoteStudentId(studentId)
-                .orElseThrow(() -> {
-                    log.warn("Cannot find student profile by given student id [studentId: {}]", studentId);
-                    throw new RuntimeException(); // TOOD
-                });
-
-        return studentProfileMapper.studentProfileToStudentProfileDto(student);
-    }
 
     @Transactional
-    @Override
-    public StudentProfileDto saveStudentProfile(UUID remoteStudentId, CreateStudentProfileDto createStudentProfile) {
+    @RabbitListener(queues = Queues.CREATED_BASKET)
+    public void receivedMessage(CreatedBasketQueue basket) {
+        UUID remoteStudentId = UUID.fromString(basket.getPerformedBy());
+
+        CreateStudentProfileDto createStudentProfile
+                = new CreateStudentProfileDto();
+
+        basket.getBasketItems().forEach(basketItem -> {
+            createStudentProfile.getRemoteCourseId().add(basketItem.getCourseId());
+        });
+
         Student student = studentRepository
                 .findByRemoteStudentId(remoteStudentId)
                 .orElseThrow(() -> {
@@ -74,7 +70,9 @@ public class StudentServiceImpl implements StudentService {
             }
         });
 
-        return studentProfileMapper.studentProfileToStudentProfileDto(studentRepository.save(student));
+//        studentService.saveStudentProfile(remoteStudentId, createStudentProfile);
+
+          log.info("Recevied Queue ({}) has been saved as a student profile [remoteStudentId: {}]", Queues.CREATED_BASKET, remoteStudentId.toString());
     }
 
 }
