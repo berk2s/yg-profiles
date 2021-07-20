@@ -21,8 +21,7 @@ import java.util.UUID;
 @Component
 public class CreatedBasketListener {
 
-    private final StudentRepository studentRepository;
-    private final CourseRepository courseRepository;
+    private final StudentService studentService;
 
     @Transactional
     @RabbitListener(queues = Queues.CREATED_BASKET)
@@ -36,43 +35,9 @@ public class CreatedBasketListener {
             createStudentProfile.getRemoteCourseId().add(basketItem.getCourseId());
         });
 
-        Student student = studentRepository
-                .findByRemoteStudentId(remoteStudentId)
-                .orElseThrow(() -> {
-                    log.warn("Cannot find student profile by given remote student id [remoteStudentId: {}]", remoteStudentId.toString());
-                    throw new RuntimeException(); // TODO
-                });
+        studentService.saveStudentProfile(remoteStudentId, createStudentProfile);
 
-        createStudentProfile.getRemoteCourseId().forEach(courseId -> {
-            UUID remoteCourseId = UUID.fromString(courseId);
-
-
-            Course course = courseRepository
-                    .findByRemoteCourseId(remoteCourseId)
-                    .orElseThrow(() -> {
-                        log.warn("Cannot find course by given remote course id [remoteCourseId: {}]", remoteCourseId.toString());
-                        throw new RuntimeException(); // TODO
-                    });
-
-            if(student.isCourseExists(course)) {
-                student.getLikedCourses().forEach(likedCourse -> {
-
-                    if(likedCourse.getCourse().getRemoteCourseId().equals(remoteCourseId)
-                            && likedCourse.getStudent().getRemoteStudentId().equals(remoteStudentId)) {
-
-                        likedCourse.setTimes(likedCourse.getTimes()+1);
-
-                    }
-
-                });
-            } else {
-                student.addCourse(course);
-            }
-        });
-
-//        studentService.saveStudentProfile(remoteStudentId, createStudentProfile);
-
-          log.info("Recevied Queue ({}) has been saved as a student profile [remoteStudentId: {}]", Queues.CREATED_BASKET, remoteStudentId.toString());
+        log.info("Recevied Queue ({}) has been saved as a student profile [remoteStudentId: {}]", Queues.CREATED_BASKET, remoteStudentId.toString());
     }
 
 }

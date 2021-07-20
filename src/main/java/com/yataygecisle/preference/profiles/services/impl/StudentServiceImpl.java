@@ -5,8 +5,11 @@ import com.yataygecisle.preference.profiles.domain.Student;
 import com.yataygecisle.preference.profiles.repository.CourseRepository;
 import com.yataygecisle.preference.profiles.repository.StudentRepository;
 import com.yataygecisle.preference.profiles.services.StudentService;
+import com.yataygecisle.preference.profiles.web.exceptions.CourseNotFoundException;
+import com.yataygecisle.preference.profiles.web.exceptions.StudentNotFoundException;
 import com.yataygecisle.preference.profiles.web.mappers.StudentMapper;
 import com.yataygecisle.preference.profiles.web.model.CreateStudentProfileDto;
+import com.yataygecisle.preference.profiles.web.model.ErrorDescription;
 import com.yataygecisle.preference.profiles.web.model.StudentProfileDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +34,7 @@ public class StudentServiceImpl implements StudentService {
                 .findByRemoteStudentId(studentId)
                 .orElseThrow(() -> {
                     log.warn("Cannot find student profile by given student id [studentId: {}]", studentId);
-                    throw new RuntimeException(); // TOOD
+                    throw new StudentNotFoundException(ErrorDescription.STUDENT_PROFILE_NOT_FOUND.getErrorDesc());
                 });
 
         return studentProfileMapper.studentProfileToStudentProfileDto(student);
@@ -44,7 +47,7 @@ public class StudentServiceImpl implements StudentService {
                 .findByRemoteStudentId(remoteStudentId)
                 .orElseThrow(() -> {
                     log.warn("Cannot find student profile by given remote student id [remoteStudentId: {}]", remoteStudentId.toString());
-                    throw new RuntimeException(); // TODO
+                    throw new StudentNotFoundException(ErrorDescription.STUDENT_PROFILE_NOT_FOUND.getErrorDesc());
                 });
 
         createStudentProfile.getRemoteCourseId().forEach(courseId -> {
@@ -55,7 +58,7 @@ public class StudentServiceImpl implements StudentService {
                     .findByRemoteCourseId(remoteCourseId)
                     .orElseThrow(() -> {
                         log.warn("Cannot find course by given remote course id [remoteCourseId: {}]", remoteCourseId.toString());
-                        throw new RuntimeException(); // TODO
+                        throw new CourseNotFoundException(ErrorDescription.COURSE_NOT_FOUND.getErrorDesc());
                     });
 
             if(student.isCourseExists(course)) {
@@ -73,6 +76,8 @@ public class StudentServiceImpl implements StudentService {
                 student.addCourse(course);
             }
         });
+
+        log.info("Student Profile has been created [remoteStudentId: {}]", remoteStudentId.toString());
 
         return studentProfileMapper.studentProfileToStudentProfileDto(studentRepository.save(student));
     }

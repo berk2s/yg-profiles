@@ -5,8 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yataygecisle.preference.profiles.domain.Course;
 import com.yataygecisle.preference.profiles.domain.Student;
 import com.yataygecisle.preference.profiles.web.model.CreateStudentProfileDto;
+import com.yataygecisle.preference.profiles.web.model.ErrorDescription;
+import com.yataygecisle.preference.profiles.web.model.ErrorType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -122,4 +125,63 @@ public class StudentControllerTest extends IntegrationTest {
 
     }
 
+    @DisplayName("Test Exceptions")
+    @Nested
+    class TestExceptions {
+
+        @DisplayName("Get Student Profile Returns Not Found")
+        @Test
+        void getStudentProfileReturnsNotFound() throws Exception {
+
+            mockMvc.perform(get(StudentController.ENDPOINT + "/" + UUID.randomUUID().toString())
+                    .header("Authentication", accessToken))
+                    .andDo(print())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error", is(ErrorType.NOT_FOUND.getErr())))
+                    .andExpect(jsonPath("$.error_description", is(ErrorDescription.STUDENT_PROFILE_NOT_FOUND.getErrorDesc())));
+
+        }
+
+        @DisplayName("Save Student Profile Returns Not Found")
+        @Test
+        void saveStudentProfileReturnsNotFound() throws Exception {
+
+
+            CreateStudentProfileDto createStudentProfile = new CreateStudentProfileDto();
+            createStudentProfile.setRemoteCourseId(List.of(UUID.randomUUID().toString()));
+
+            mockMvc.perform(post(StudentController.ENDPOINT + "/" + UUID.randomUUID())
+                    .header("Authentication", accessToken)
+                    .content(objectMapper.writeValueAsString(createStudentProfile))
+                    .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error", is(ErrorType.NOT_FOUND.getErr())))
+                    .andExpect(jsonPath("$.error_description", is(ErrorDescription.STUDENT_PROFILE_NOT_FOUND.getErrorDesc())));
+
+
+        }
+
+        @DisplayName("Save Student Profile Return Course Not Founx")
+        @Test
+        void saveStudentProfile() throws Exception {
+
+
+            CreateStudentProfileDto createStudentProfile = new CreateStudentProfileDto();
+            createStudentProfile.setRemoteCourseId(List.of(UUID.randomUUID().toString()));
+
+            mockMvc.perform(post(StudentController.ENDPOINT + "/" + student.getRemoteStudentId().toString())
+                    .header("Authentication", accessToken)
+                    .content(objectMapper.writeValueAsString(createStudentProfile))
+                    .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error", is(ErrorType.NOT_FOUND.getErr())))
+                    .andExpect(jsonPath("$.error_description", is(ErrorDescription.COURSE_NOT_FOUND.getErrorDesc())));
+
+
+        }
+
+    }
 }
