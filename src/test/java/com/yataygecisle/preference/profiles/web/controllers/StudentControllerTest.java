@@ -7,6 +7,7 @@ import com.yataygecisle.preference.profiles.domain.Student;
 import com.yataygecisle.preference.profiles.web.model.CreateStudentProfileDto;
 import com.yataygecisle.preference.profiles.web.model.ErrorDescription;
 import com.yataygecisle.preference.profiles.web.model.ErrorType;
+import com.yataygecisle.preference.profiles.web.model.InteractionType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -54,7 +55,7 @@ public class StudentControllerTest extends IntegrationTest {
     void getStudentProfile() throws Exception {
 
         mockMvc.perform(get(StudentController.ENDPOINT + "/" + student.getRemoteStudentId().toString())
-                .header("Authentication", accessToken))
+                .header("Authorization", "Bearer " + accessToken))
                 .andDo(print())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
@@ -67,7 +68,8 @@ public class StudentControllerTest extends IntegrationTest {
                 .andExpect(jsonPath("$.likedCourses.[0].remoteCollegeId", is(student.getLikedCourses().get(0).getCourse().getRemoteCollegeId().toString())))
                 .andExpect(jsonPath("$.likedCourses.[0].remoteFacultyId", is(student.getLikedCourses().get(0).getCourse().getRemoteFacultyId().toString())))
                 .andExpect(jsonPath("$.likedCourses.[0].remoteCourseId", is(student.getLikedCourses().get(0).getCourse().getRemoteCourseId().toString())))
-                .andExpect(jsonPath("$.likedCourses.[0].times", is(1)));
+                .andExpect(jsonPath("$.likedCourses.[0].timesBasket", is(1)))
+                .andExpect(jsonPath("$.likedCourses.[0].timesTotal", is(1)));
 
     }
 
@@ -79,9 +81,10 @@ public class StudentControllerTest extends IntegrationTest {
 
         CreateStudentProfileDto createStudentProfile = new CreateStudentProfileDto();
         createStudentProfile.setRemoteCourseId(List.of(newCourse.getRemoteCourseId().toString()));
+        createStudentProfile.setInteractionType(InteractionType.FROM_BASKET);
 
         mockMvc.perform(post(StudentController.ENDPOINT + "/" + student.getRemoteStudentId().toString())
-                .header("Authentication", accessToken)
+                .header("Authorization", "Bearer " + accessToken)
                 .content(objectMapper.writeValueAsString(createStudentProfile))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
@@ -95,7 +98,7 @@ public class StudentControllerTest extends IntegrationTest {
                 .andExpect(jsonPath("$.likedCourses[*].remoteCollegeId", anyOf(hasItem(newCourse.getRemoteCollegeId().toString()))))
                 .andExpect(jsonPath("$.likedCourses[*].remoteFacultyId", anyOf(hasItem(newCourse.getRemoteFacultyId().toString()))))
                 .andExpect(jsonPath("$.likedCourses[*].remoteCourseId", anyOf(hasItem(newCourse.getRemoteCourseId().toString()))))
-                .andExpect(jsonPath("$.likedCourses[*].times", anyOf(hasItem(1))));
+                .andExpect(jsonPath("$.likedCourses[*].timesTotal", anyOf(hasItem(1))));
 
     }
 
@@ -105,9 +108,10 @@ public class StudentControllerTest extends IntegrationTest {
 
         CreateStudentProfileDto createStudentProfile = new CreateStudentProfileDto();
         createStudentProfile.setRemoteCourseId(List.of(course.getRemoteCourseId().toString()));
+        createStudentProfile.setInteractionType(InteractionType.FROM_BASKET);
 
         mockMvc.perform(post(StudentController.ENDPOINT + "/" + student.getRemoteStudentId().toString())
-                .header("Authentication", accessToken)
+                .header("Authorization", "Bearer " + accessToken)
                 .content(objectMapper.writeValueAsString(createStudentProfile))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
@@ -121,7 +125,25 @@ public class StudentControllerTest extends IntegrationTest {
                 .andExpect(jsonPath("$.likedCourses[*].remoteCollegeId", anyOf(hasItem(course.getRemoteCollegeId().toString()))))
                 .andExpect(jsonPath("$.likedCourses[*].remoteFacultyId", anyOf(hasItem(course.getRemoteFacultyId().toString()))))
                 .andExpect(jsonPath("$.likedCourses[*].remoteCourseId", anyOf(hasItem(course.getRemoteCourseId().toString()))))
-                .andExpect(jsonPath("$.likedCourses[*].times", anyOf(hasItem(2))));
+                .andExpect(jsonPath("$.likedCourses[*].timesTotal", anyOf(hasItem(2))));
+
+    }
+
+    @DisplayName("Analyze Student Profile")
+    @Test
+    void analyzeStudentProfile() throws Exception {
+
+        mockMvc.perform(get(StudentController.ENDPOINT + "/analyze/" + student.getRemoteStudentId().toString())
+                .header("Authorization", "Bearer " + accessToken))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.studentId", is(student.getRemoteStudentId().toString())))
+                .andExpect(jsonPath("$.possibilities[*].collegeId", anyOf(hasItem(course.getRemoteCollegeId().toString()))))
+                .andExpect(jsonPath("$.possibilities[*].facultyId", anyOf(hasItem(course.getRemoteFacultyId().toString()))))
+                .andExpect(jsonPath("$.possibilities[*].courseId", anyOf(hasItem(course.getRemoteCourseId().toString()))))
+                .andExpect(jsonPath("$.possibilities[*].timesBasket", anyOf(hasItem(1))))
+                .andExpect(jsonPath("$.possibilities[*].timesTotal", anyOf(hasItem(1))))
+                .andExpect(jsonPath("$.possibilities[*].possibility", anyOf(hasItem(5.0))));
 
     }
 
@@ -134,7 +156,7 @@ public class StudentControllerTest extends IntegrationTest {
         void getStudentProfileReturnsNotFound() throws Exception {
 
             mockMvc.perform(get(StudentController.ENDPOINT + "/" + UUID.randomUUID().toString())
-                    .header("Authentication", accessToken))
+                    .header("Authorization", "Bearer " + accessToken))
                     .andDo(print())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
                     .andExpect(status().isNotFound())
@@ -150,9 +172,10 @@ public class StudentControllerTest extends IntegrationTest {
 
             CreateStudentProfileDto createStudentProfile = new CreateStudentProfileDto();
             createStudentProfile.setRemoteCourseId(List.of(UUID.randomUUID().toString()));
+            createStudentProfile.setInteractionType(InteractionType.FROM_BASKET);
 
             mockMvc.perform(post(StudentController.ENDPOINT + "/" + UUID.randomUUID())
-                    .header("Authentication", accessToken)
+                    .header("Authorization", "Bearer " + accessToken)
                     .content(objectMapper.writeValueAsString(createStudentProfile))
                     .contentType(MediaType.APPLICATION_JSON))
                     .andDo(print())
@@ -163,16 +186,17 @@ public class StudentControllerTest extends IntegrationTest {
 
         }
 
-        @DisplayName("Save Student Profile Return Course Not Founx")
+        @DisplayName("Save Student Profile Return Course Not Found")
         @Test
-        void saveStudentProfile() throws Exception {
+        void saveStudentProfileReturnsCourseNotFound() throws Exception {
 
 
             CreateStudentProfileDto createStudentProfile = new CreateStudentProfileDto();
             createStudentProfile.setRemoteCourseId(List.of(UUID.randomUUID().toString()));
+            createStudentProfile.setInteractionType(InteractionType.FROM_BASKET);
 
             mockMvc.perform(post(StudentController.ENDPOINT + "/" + student.getRemoteStudentId().toString())
-                    .header("Authentication", accessToken)
+                    .header("Authorization", "Bearer " + accessToken)
                     .content(objectMapper.writeValueAsString(createStudentProfile))
                     .contentType(MediaType.APPLICATION_JSON))
                     .andDo(print())
@@ -180,6 +204,22 @@ public class StudentControllerTest extends IntegrationTest {
                     .andExpect(jsonPath("$.error", is(ErrorType.NOT_FOUND.getErr())))
                     .andExpect(jsonPath("$.error_description", is(ErrorDescription.COURSE_NOT_FOUND.getErrorDesc())));
 
+
+        }
+        @DisplayName("Save Student Profile Return Invalid Interaction Type")
+        @Test
+        void saveStudentProfileReturnsInvalidInteractionType() throws Exception {
+
+
+            CreateStudentProfileDto createStudentProfile = new CreateStudentProfileDto();
+            createStudentProfile.setRemoteCourseId(List.of(UUID.randomUUID().toString()));
+
+            mockMvc.perform(post(StudentController.ENDPOINT + "/" + student.getRemoteStudentId().toString())
+                    .header("Authorization", "Bearer " + accessToken)
+                    .content(objectMapper.writeValueAsString(createStudentProfile))
+                    .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andExpect(status().isBadRequest());
 
         }
 

@@ -98,6 +98,12 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return errorResponse(new ErrorResponse(ErrorType.NOT_FOUND.getErr(), ex.getMessage(), HttpStatus.NOT_FOUND));
     }
 
+    @ExceptionHandler(InvalidInteractionTypeException.class)
+    protected ResponseEntity<ErrorResponse> handleInvalidInteractionTypeException(InvalidInteractionTypeException ex) {
+        log.warn("InvalidInteractionTypeException: {} {}", ex.getLocalizedMessage(), ex.getMessage());
+        return errorResponse(new ErrorResponse(ErrorType.INVALID_REQUEST.getErr(), ex.getMessage(), HttpStatus.BAD_REQUEST));
+    }
+
     private ResponseEntity<ErrorResponse> errorResponse(ErrorResponse errorResponse){
         return new ResponseEntity<>(errorResponse, errorResponse.getHttpStatus());
     }

@@ -37,7 +37,7 @@ public class CreatedBasketListener {
 
         studentService.saveStudentProfile(remoteStudentId, createStudentProfile);
 
-        log.info("Recevied Queue ({}) has been saved as a student profile [remoteStudentId: {}]", Queues.CREATED_BASKET, remoteStudentId.toString());
+        log.info("Received Queue ({}) has been saved as a student profile [remoteStudentId: {}]", Queues.CREATED_BASKET, remoteStudentId.toString());
     }
 
 }

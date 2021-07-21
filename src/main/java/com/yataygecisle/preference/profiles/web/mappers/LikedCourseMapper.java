@@ -15,8 +15,7 @@ public interface LikedCourseMapper {
             @Mapping(target = "courseId", expression = "java( likedCourse.getId().getCourseId().toString() )"),
             @Mapping(target = "remoteCollegeId", expression = "java( likedCourse.getCourse().getRemoteCollegeId().toString() )"),
             @Mapping(target = "remoteFacultyId", expression = "java( likedCourse.getCourse().getRemoteFacultyId().toString() )"),
-            @Mapping(target = "remoteCourseId", expression = "java( likedCourse.getCourse().getRemoteCourseId().toString() )"),
-            @Mapping(target = "times", expression = "java( likedCourse.getTimes() )"),
+            @Mapping(target = "remoteCourseId", expression = "java( likedCourse.getCourse().getRemoteCourseId().toString() )")
     })
     LikedCourseDto likedCourseToLikedCourseDto(LikedCourse likedCourse);
 

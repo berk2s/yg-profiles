@@ -21,4 +21,7 @@ public class CreateStudentProfileDto {
     @NotEmpty
     private List<String> remoteCourseId = new ArrayList<>();
 
+    @NotNull
+    private InteractionType interactionType;
+
 }
