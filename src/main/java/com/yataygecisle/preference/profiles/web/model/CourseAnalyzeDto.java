@@ -5,22 +5,23 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
+
 @AllArgsConstructor
 @NoArgsConstructor
+@Data
 @Builder
-public class LikedCourseDto {
+public class CourseAnalyzeDto {
+
+    private String collegeId;
+
+    private String facultyId;
 
     private String courseId;
-
-    private String remoteCollegeId;
-
-    private String remoteFacultyId;
-
-    private String remoteCourseId;
 
     private Long timesBasket;
 
     private Long timesTotal;
+
+    private Double possibility;
 
 }

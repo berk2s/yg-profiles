@@ -29,9 +29,11 @@ public class LikedCourse {
     @MapsId("courseId")
     private Course course;
 
-    @ColumnDefault("1")
+    @Column(name = "timesBasket")
+    private Long timesBasket;
+
     @Column(name = "times")
-    private Long times;
+    private Long timesTotal;
 
     public LikedCourse(Student student, Course course) {
         this.course = course;
@@ -41,8 +43,12 @@ public class LikedCourse {
 
     @PrePersist
     public void initialize() {
-        if(this.times == null) {
-            this.times = 1L;
+        if(this.timesTotal == null) {
+            this.timesTotal = 1L;
+        }
+
+        if(this.timesBasket == null) {
+            this.timesBasket = 1L;
         }
     }
 

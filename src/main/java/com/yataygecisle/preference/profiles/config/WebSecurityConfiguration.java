@@ -19,7 +19,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .csrf().disable();
         http
                 .authorizeRequests()
-                    .anyRequest().permitAll()
+                    .anyRequest().authenticated()
                 .and()
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt()
                     .jwtAuthenticationConverter(getJwtAuthenticationConverter()));
